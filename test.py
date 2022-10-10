@@ -47,13 +47,20 @@ def read_data(filename,sheet_name):
 
 # 修改信息
 def modify_data(data_person):
+    # 问卷id
     id_person = data_person[0]
     dict_data['id'] = id_person
+    # 打卡日期
     time_today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
     dict_data['daka_day'] = time_today
+    # 成员id
     member_id_person = data_person[1]
     dict_data['member_id'] = member_id_person
     temperature_person =data_person[2]
+    # 问卷日期
+    dict_data['invest']['day'] = time_today
+    # 打卡时间戳
+    dict_data['invest']['time'] = int(time.time()*1000)
     # 体温
     dict_data['invest']['subject'][1]['input']['content']=temperature_person
     # 地理位置
@@ -79,7 +86,7 @@ def send_request(url,request_data,log_name):
     r= requests.post(url,json=request_data, headers= my_header)
     if(r.json()['msg'] =='ok'):
         with open("log.txt","a") as file:
-            file.write(time.strftime('\n'+'%Y-%m-%d', time.localtime(time.time()))+' '+log_name+' 的信息上传成功！！')
+            file.write(time.strftime('\n'+'%Y-%m-%d %H:%M:%S', time.localtime(time.time()))+' '+log_name+' 的信息上传成功！！')
     return 1
 
 
@@ -91,6 +98,8 @@ if __name__ == '__main__':
             dict_data = dict_data_or.copy()
             modify_data(data_temp)
             url =host+url_submit
+            # print(dict_data)
             send_request(url,dict_data,data_temp[10])
-        print('等待八小时后...')
+        print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+        print('填报成功，等待八小时后再次填报......')
         sleep(28800)
