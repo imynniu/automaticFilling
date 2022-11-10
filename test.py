@@ -46,14 +46,37 @@ def read_data(filename,sheet_name):
         data.append(temp_data)
     return 1
 #读取请求体数据
-def read_request_body(filename):
-    with open(filename,'r',encoding="utf-8") as file:
-        return file.read()
+# def read_request_body(filename):
+#     with open(filename,'r',encoding="utf-8") as file:
+#         return file.read()
+        ############
         # print(file.read())
         # dict_body =  file.read()
         # print(dict_body)
     # return dict_body
-
+#读取请求体数据
+def read_request_body(filename):
+    #修改请求头
+    global dict_data 
+    global my_header
+    dict_data = {}
+    my_header = {}
+    with open(filename, "r",encoding='utf-8') as f:
+        for line in f.readlines():
+            line = line.strip('\n')  #去掉列表中每一个元素的换行符
+            # print(line.split(':'))
+            list_line = line.split(':')
+            if list_line[0] == 'User-Agent':
+                my_header['User-Agent'] = list_line[1].strip()
+            elif list_line[0] == 'imprint':
+                my_header['imprint'] = list_line[1].strip()
+            elif list_line[0] == 'Referer':
+                # print(list_line)
+                my_header['Referer'] = list_line[1].strip()+':'+list_line[2]
+    #修改请求体
+    with open(filename, 'r',encoding='utf-8') as fp:
+        lines = fp.readlines()
+        dict_data = eval(lines[-1])
 #写日志
 def write_log(file_log,content):
     with open(file_log,"a") as file:
@@ -64,26 +87,28 @@ def modify_header(data_person):
 # 修改信息
 def modify_data(data_person):
     # 问卷id
-    id_person = data_person[0]
-    dict_data['id'] = id_person
+    # id_person = data_person[0]
+    # dict_data['id'] = id_person
     # 打卡日期
     time_today = time.strftime('%Y-%m-%d', time.localtime(time.time()))
     dict_data['daka_day'] = time_today
-    # 成员id
+    # # 成员id
     member_id_person = data_person[1]
     dict_data['member_id'] = member_id_person
-    temperature_person =data_person[2]
+
     # 问卷日期
     dict_data['invest']['day'] = time_today
     # 打卡时间戳
     dict_data['invest']['time'] = int(time.time()*1000)
     # 体温
+    #体温
+    temperature_person =data_person[0]
     dict_data['invest']['subject'][1]['input']['content']=temperature_person
     # 地理位置
-    city = data_person[5]
-    buildings = data_person[6]
-    lat = data_person[7]
-    lng = data_person[8]
+    city = data_person[3]
+    buildings = data_person[4]
+    lat = data_person[5]
+    lng = data_person[6]
     loc = {
         "title":buildings,
         "address":city,
@@ -91,7 +116,7 @@ def modify_data(data_person):
     }
     dict_data['invest']['subject'][2]['input']['content'] = json.dumps(loc)
     # 联系赵洪吉
-    content_person = data_person[9]
+    content_person = data_person[7]
     dict_data['invest']['subject'][5]['input']['content'] = content_person
 
 
@@ -115,13 +140,19 @@ if __name__ == '__main__':
         data.clear()
         re_read = read_data(filename, sheet_name)
         for data_temp in data:
-            dict_data={}
-            filename_data = data_temp[11]
-            dict_data = eval(read_request_body(filename_data))
+            dict_data = {}
+            my_header = {}
+            filename_data = data_temp[9]
+            read_request_body(filename_data)
             modify_data(data_temp)
             url =host+url_submit
-            modify_header(data_temp)
-            send_request(url,dict_data,str(data_temp[10]))
+            #测试查看数据、
+            # print(dict_data)
+            # print(my_header)
+            # print(url)
+            
+            send_request(url,dict_data,str(data_temp[8]))
+            sleep(5)
         print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
         print('填报成功，等待八小时后再次填报......')
         sleep(28800)
